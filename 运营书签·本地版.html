@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh_CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="renderer" content="webkit">
+  <meta name="keywords" content="小聚吧,聚集优秀网站">
+  <meta name="description" content="小聚吧提供最快捷的资源平台,提供各类优秀网站,方便你的生活和工作">
+  <meta name="referrer" content="no-referrer">
+  <title>运营书签·小聚吧 | 小聚吧</title>
+  <style>
+    /* ============================================================
+       全局基础
+       ============================================================ */
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      overflow-x: hidden;
+    }
+    body::-webkit-scrollbar { width: 0; }
+    a { text-decoration: none; }
+    /* ============================================================
+       背景层
+       - .bg         : 固定紫色背景
+       - .starfield  : 星光闪烁 canvas（贴在紫色背景之上）
+       - .index      : 内容层，position/z-index 让它始终在两层背景上方
+       ============================================================ */
+    .bg {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -10;
+      background-color: rgba(107, 5, 250, 0.86);
+      background-size: 100% auto;
+      background-position: 50%;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    .starfield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -9;
+      opacity: 0.5;
+      pointer-events: none;
+      display: block;
+    }
+    .index {
+      position: relative;
+      z-index: 0;
+      min-width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background: rgba(0, 0, 0, .1);
+      background-size: 100% auto;
+      background-position: 50%;
+    }
+    /* ============================================================
+       页头
+       ============================================================ */
+    .header {
+      padding: .5rem 1rem;
+    }
+    .header .row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .header .user {
+      text-align: right;
+    }
+    .header .user a {
+      margin: 0 .2rem;
+      color: #fff;
+    }
+    /* ============================================================
+       搜索区
+       ============================================================ */
+    .search {
+      position: relative;
+      margin-top: 3rem;
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+    .search .info .title {
+      margin-bottom: .7rem;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+      border-radius: 5px;
+      user-select: none;
+    }
+    .search .info .desc {
+      font-size: .5rem;
+      color: #fff;
+      user-select: none;
+    }
+    /* 搜索列：对齐原版 el-col-24 / xs-23 / sm-18 / md-10 */
+    .search-col {
+      position: relative;
+      width: 95.83333%;
+      margin: 0 auto;
+      padding: 0;
+    }
+    @media (min-width: 768px) {
+      .search-col { width: 75%; }
+    }
+    @media (min-width: 992px) {
+      .search-col { width: 41.66667%; }
+    }
+    /* 搜索引擎切换标签 */
+    .search .search-sites {
+      margin-top: 1rem;
+    }
+    .search .search-sites .list {
+      display: inline-block;
+      margin: 0 .5rem;
+      font-size: 1rem;
+      line-height: 1.5rem;
+      color: #fff;
+      cursor: pointer;
+      white-space: pre-wrap;
+      opacity: .75;
+      transition: all .2s;
+    }
+    .search .search-sites .list:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .search .search-sites .list.active {
+      opacity: 1;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    /* 搜索框：尺寸对齐 Element UI 默认 el-input（40px 高） */
+    .search .search-box {
+      margin-top: 1rem;
+    }
+    .search-input {
+      display: flex;
+      height: 40px;
+      color: #fff;
+    }
+    .search-input input {
+      flex: 1;
+      height: 40px;
+      padding: 0 1.5rem;
+      color: #fff;
+      background-color: rgba(0, 0, 0, .2);
+      border: 0;
+      border-top-left-radius: 25px;
+      border-bottom-left-radius: 25px;
+      outline: none;
+      font-size: 14px;
+      line-height: 40px;
+      transition: all .1s;
+    }
+    .search-input input::placeholder {
+      color: rgba(255, 255, 255, .8);
+    }
+    .search-input input:hover,
+    .search-input input:focus {
+      background-color: rgba(0, 0, 0, .5);
+    }
+    .search-input .search-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+      color: #fff;
+      font-size: 18px;
+      background-color: rgba(0, 0, 0, .2);
+      border-top-right-radius: 25px;
+      border-bottom-right-radius: 25px;
+      cursor: pointer;
+      transition: all .2s;
+      user-select: none;
+    }
+    .search-input .search-btn:hover {
+      background-color: rgba(0, 0, 0, .5);
+    }
+    .search-input .search-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    /* ============================================================
+       书签卡片
+       ============================================================ */
+    .box-wrapper {
+      text-align: center;
+      padding: 0 .5rem;
+    }
+    .box-wrapper::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    /* 栅格列：对齐 el-col-24 / xs-24 / sm-12 / md-8 / xl-6 */
+    .col-bookmark {
+      position: relative;
+      width: 100%;
+      padding: 0;
+      float: left;
+    }
+    @media (min-width: 768px) {
+      .col-bookmark { width: 50%; }
+    }
+    @media (min-width: 992px) {
+      .col-bookmark { width: 33.33333%; }
+    }
+    @media (min-width: 1920px) {
+      .col-bookmark { width: 25%; }
+    }
+    .box {
+      height: 11rem;
+      margin: .5rem .5rem;
+      padding: 1rem 1.5rem .5rem 1.5rem;
+      color: #fff;
+      background: rgba(0, 0, 0, .1);
+      border-radius: 1.5rem;
+      transition: box-shadow .5s, transform .5s;
+    }
+    .box .title {
+      margin-top: .5rem;
+      font-size: 1.05rem;
+      font-weight: bolder;
+      letter-spacing: .5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .box .title .text {
+      color: #fff;
+      vertical-align: middle;
+    }
+    .box .introduction {
+      height: 1rem;
+      margin: .5rem 0;
+      font-size: .9rem;
+      line-height: 1rem;
+      color: #bbb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+    .box .navigation {
+      height: 7rem;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .box .navigation::-webkit-scrollbar { width: 0; }
+    .box .navigation .nav {
+      float: left;
+      width: 33.33333%;
+      margin-bottom: 1rem;
+    }
+    .box .navigation .nav a {
+      font-size: .8rem;
+      color: #fff;
+      vertical-align: baseline;
+      transition: all .2s;
+      word-break: break-all;
+    }
+    .box .navigation .nav a:hover {
+      color: #3498db;
+    }
+    .box .navigation::after {
+      content: "";
+      display: block;
+      clear: both;
+      width: 0;
+      height: 0;
+      visibility: hidden;
+    }
+    /* ============================================================
+       页脚
+       ============================================================ */
+    .footer {
+      margin: 2rem 0 0;
+      color: #fff;
+      font-size: .9rem;
+      text-align: center;
+    }
+    .footer p {
+      margin: 0;
+      color: #fff;
+      line-height: 1;
+    }
+    .footer .icp {
+      color: #ddd;
+      font-size: .8rem;
+    }
+    .footer .icp:hover {
+      color: #2ecc71;
+    }
+    /* ============================================================
+       右侧悬浮栏
+       ============================================================ */
+    .right-bar {
+      position: fixed;
+      top: 8rem;
+      right: 1rem;
+    }
+    .right-bar > div { margin: 1rem 0; }
+    .right-bar i {
+      font-style: normal;
+      font-size: 1.4rem;
+      color: #fff;
+      cursor: pointer;
+    }
+    /* ============================================================
+       响应式微调
+       ============================================================ */
+    @media (max-width: 768px) {
+      .search .search-sites .list {
+        margin: .2rem;
+        font-size: .8rem;
+        line-height: 1.4;
+        word-break: break-word;
+        white-space: pre-wrap;
+      }
+      .box {
+        margin-left: .5rem;
+        margin-right: .5rem;
+      }
+    }
+    @media screen and (max-width: 500px) {
+      .right-bar {
+        top: unset !important;
+        bottom: 1rem !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div>
+      <!-- 背景层：紫色 + 星光 canvas -->
+      <div class="bg"></div>
+      <canvas id="starfield" class="starfield"></canvas>
+      <div class="index">
+        <!-- ==================== 页头 ==================== -->
+        <div class="header">
+          <div class="row">
+            <div></div>
+            <div class="user">
+              <a href="https://onepay-pk-admin.adminwego.com/">Onepay</a>
+            </div>
+          </div>
+        </div>
+        <!-- ==================== 搜索区 ==================== -->
+        <div class="search">
+          <div class="info">
+            <div class="title">运营书签·小聚吧</div>
+            <div class="desc">巴基斯坦运营版｜聚集支付类业务网站</div>
+          </div>
+          <!-- 引擎切换标签，新增链上查询 -->
+          <div class="search-sites" id="searchSites">
+            <span class="list active" data-engine="google">Google</span>
+            <span class="list" data-engine="sogou">搜狗翻译</span>
+            <span class="list" data-engine="gtranslate">谷歌翻译</span>
+            <span class="list" data-engine="chain">链上查询</span>
+          </div>
+          <div class="search-box">
+            <div class="search-col">
+              <div class="search-input">
+                <input
+                  type="text"
+                  id="searchInput"
+                  autocomplete="off"
+                  autofocus
+                  placeholder="谷歌一下">
+                <div class="search-btn" id="searchBtn" title="搜索">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ==================== 书签卡片列表 ==================== -->
+        <div class="nav">
+          <div class="box-wrapper">
+            <!-- Karo -->
+            <div class="col-bookmark">
+              <div class="box" id="205">
+                <div class="title"><span class="text">Karo</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://console-pk.karo-pay.com/#/login" target="_blank">karo管理后台</a></div>
+                  <div class="nav"><a href="https://docs.google.com/document/d/1dGQ_g3qNJbmvf0gIvbn2ay4dDTjcIYS8HgAx8zhOv30/edit?tab=t.0&amp;pli=1&amp;authuser=0#heading=h.uvjovbv3a7k8" target="_blank">karo操作手册</a></div>
+                  <div class="nav"><a href="https://streamlit88.karo-pay.com/#e0342b5c" target="_blank">Karo数据看板</a></div>
+                  <div class="nav"><a href="https://karopay-api-doc.readme.io/reference/notify-order-result-request" target="_blank">Karo API文档</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- Legend -->
+            <div class="col-bookmark">
+              <div class="box" id="210">
+                <div class="title"><span class="text">Legend</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://pk-admin.legendpayer.com/" target="_blank">legend后台</a></div>
+                </div>
+              </div>
+            </div>
+             <!-- OnePay -->
+            <div class="col-bookmark">
+              <div class="box" id="208">
+                <div class="title"><span class="text">OnePay</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://onepay-pk-admin.adminwego.com/dashboard/statistics" target="_blank">OnePay后台</a></div>
+                  <div class="nav"><a href="https://taqarmc25.sg.larksuite.com/wiki/As6Gw3tybiSDZ7kQgQTloQsIgcf" target="_blank">OP巴基斯坦SOP</a></div>
+                  <div class="nav"><a href="https://taqarmc25.sg.larksuite.com/wiki/ACgHwoiHtiZGw9kAZyXl5lK7gBh" target="_blank">OP巴基斯坦渠道表</a></div>
+                  <div class="nav"><a href="https://docs.google.com/spreadsheets/d/1KyxxKjHiF80yt8mTuOq6PY6TL6FuvcWaF7uHq7gLCNI/edit?gid=0#gid=0" target="_blank">OP商户群TG汇总</a></div>
+                  <div class="nav"><a href="https://onepay-pk-admin.adminwego.com/doc/merchant-guide/pkr/v2" target="_blank">OP商户对接文档 · API v2</a></div>
+                </div>
+              </div>
+            </div>
+             <!-- 其他管理后台（运营） -->
+            <div class="col-bookmark">
+              <div class="box" id="208">
+                <div class="title"><span class="text">其他管理后台（运营）</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://pk-cardsys.hoyifintech.com/" target="_blank">legend挂户后台（PK）</a></div>
+                  <div class="nav"><a href="https://mgr.triboe.com/" target="_blank">Triboe跑分后台</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- Lark -->
+            <div class="col-bookmark">
+              <div class="box" id="209">
+                <div class="title"><span class="text">Lark </span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://larksuite.com/drive/home/" target="_blank">Lark云文档</a></div>
+                  <div class="nav"><a href="https://larksuite.com/admin/index" target="_blank">Lark管理后台</a></div>
+                  <div class="nav"><a href="https://www.larksuite.com/zh_cn/" target="_blank">lark网页版入口</a></div>
+                  <div class="nav"><a href="https://wlarksuite.com/next/messenger/" target="_blank">lark网页版消息</a></div>
+                  <div class="nav"><a href="https://larksuite.com/mail" target="_blank">lark邮箱</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- D0&EP -->
+            <div class="col-bookmark">
+              <div class="box" id="202">
+                <div class="title"><span class="text">PK转账专用</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://business.jazzcash.com.pk/ui/home/dashboard/org-dashboard" target="_blank">Jazzcash</a></div>
+                  <div class="nav"><a href="https://easypay.easypaisa.com.pk/easypay-merchant/faces/pg/site/Login.jsf" target="_blank">EasyPaisa</a></div>
+                  <div class="nav"><a href="https://enterprise.mobilinkbank.com/" target="_blank">MBL</a></div>
+                  <div class="nav"><a href="https://easypay.easypaisa.com.pk/easypay-merchant/faces/pg/site/PaymentTabDetails.jsf" target="_blank">EP金额监控</a></div>
+                  <div class="nav"><a href="https://easypay.easypaisa.com.pk/easypay-merchant/faces/pg/site/ManageBeneficiaryDetails.jsf" target="_blank">EP支付页面</a></div>
+                  <div class="nav"><a href="https://easypay.easypaisa.com.pk/easypay-merchant/faces/pg/site/SettlementTransactionHistory.jsf" target="_blank">EP导出历史</a></div>
+                  <div class="nav"><a href="https://mail.hostinger.com/mailboxes/INBOX/630?p=1&amp;c=all" target="_blank">Hostinger</a></div>
+                  <div class="nav"><a href="https://metacoreinnovations.pk:2096/cpsess7878525007/3rdparty/roundcube/?_task=mail&amp;_mbox=INBOX" target="_blank">webmail</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- Google 文档 -->
+            <div class="col-bookmark">
+              <div class="box" id="206">
+                <div class="title"><span class="text">Google文档</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://docs.google.com/spreadsheets/d/1riQ37JIO0N0QaGCwI9Iy-Csz24Y0iP1mmLbqP7OzRbo/edit?gid=0#gid=0" target="_blank">巴基斯坦渠道表</a></div>
+                  <div class="nav"><a href="https://docs.google.com/spreadsheets/d/18ClxjIug50BXnAUbkgFpsVKct4Ft738owN6UxIBHMUc/edit?gid=1701919255#gid=1701919255" target="_blank">渠道跑量日报表</a></div>
+                  <div class="nav"><a href="https://docs.google.com/spreadsheets/d/1MpWAzv-dQ9ckjAAqQMEdOAPJ-HHkIQd-F31PvoTHy0Y/edit?pli=1&amp;gid=0#gid=0" target="_blank">提现登记表</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- Lark 文档 -->
+            <div class="col-bookmark">
+              <div class="box" id="206">
+                <div class="title"><span class="text">Lark文档</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://taqarmc25.sg.larksuite.com/wiki/Vr3lwfjvuia9iOkv7kCl3fiegaf" target="_blank">巴基斯坦跑分</a></div>
+                  <div class="nav"><a href="https://taqarmc25.sg.larksuite.com/wiki/KjaywJwdFieplvkioQcl57dfgrd?sheet=80a1bd" target="_blank">巴基斯坦承兑表</a></div>
+                  <div class="nav"><a href="https://docs.google.com/spreadsheets/d/18ClxjIug50BXnAUbkgFpsVKct4Ft738owN6UxIBHMUc/edit?gid=664887543#gid=664887543" target="_blank">挂户统计表</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- google 云盘 -->
+            <div class="col-bookmark">
+              <div class="box" id="206">
+                <div class="title"><span class="text">Google云盘</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://drive.google.com/drive/u/0/folders/1WG1CzN90FS9w8W0ieibV5YlsCWFmKEU1" target="_blank">挂户后台账户流水收集表</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 上游渠道 -->
+            <div class="col-bookmark">
+              <div class="box" id="211">
+                <div class="title"><span class="text">上游渠道后台</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://portal.pay-sol.com/user/search-payout" target="_blank">RAP-EP</a></div>
+                  <div class="nav"><a href="https://uni-pay.pro/merchant/balanceformch" target="_blank">Unipay</a></div>
+                  <div class="nav"><a href="https://mvpgateway.com/payout-accounts/details/6a4fa527371d3452dc13e56b" target="_blank">Sunpay</a></div>
+                  <div class="nav"><a href="https://paystep10.com/MasterMerchant/MerchantInstantPayOutFundTransfer" target="_blank">PayStep10</a></div>
+                  <div class="nav"><a href="https://merchant.flowdexx.net/dashboard" target="_blank">Flowdexx</a></div>
+                  <div class="nav"><a href="https://api.deltapayofficial.com/user/dashboard" target="_blank">DeltaPay</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 牌照 -->
+            <div class="col-bookmark">
+              <div class="box" id="198">
+                <div class="title"><span class="text">牌照</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://www.fincen.gov/resources/msb-state-selector" target="_blank">美国MSB牌照系统</a></div>
+                  <div class="nav"><a href="https://eservices.customs.gov.hk/MSOS/index?request_locale=zh_TW" target="_blank">香港MSO牌照系统</a></div>
+                  <div class="nav"><a href="https://www.bb.org.bd/" target="_blank">孟加拉央行官网</a></div>
+                  <div class="nav"><a href="https://payproglobal.com/zh/%E8%A7%A3%E7%AD%94/%E4%BB%80%E4%B9%88%E6%98%AF%E6%94%AF%E4%BB%98%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E5%95%86psp/" target="_blank">PSP</a></div>
+                  <div class="nav"><a href="https://www.bvifsc.vg/certificate-validation" target="_blank">BVIFSC证书验证</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 汇率速查 -->
+            <div class="col-bookmark">
+              <div class="box" id="200">
+                <div class="title"><span class="text">汇率速查</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://p2p.binance.com/trade/all-payments/USDT?fiat=PKR" target="_blank">Binance-PKR</a></div>
+                  <div class="nav"><a href="https://wise.com/zh-cn/currency-converter/" target="_blank">Wise</a></div>
+                  <div class="nav"><a href="https://www.xe.com/zh-cn/currencyconverter/convert/?Amount=1&amp;From=USD&amp;To=CNY" target="_blank">Xe</a></div>
+                  <div class="nav"><a href="https://m.huilv.cc/" target="_blank">huilv</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 运营工具 -->
+            <div class="col-bookmark">
+              <div class="box" id="203">
+                <div class="title"><span class="text">运营工具</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://web.reogrid.net/xlsx-viewer/" target="_blank">Excle在线导入（防本地锁）</a></div>
+                  <div class="nav"><a href="https://rustdesk.com/zh-cn/" target="_blank">Rustdesk</a></div>
+                  <div class="nav"><a href="https://parsec.app/downloads" target="_blank">Parsec</a></div>
+                  <div class="nav"><a href="https://virtualbrowser.cc/zh/" target="_blank">VirtualBrowser</a></div>
+                  <div class="nav"><a href="https://github.com/clash-verge-rev/clash-verge-rev/releases" target="_blank">ClashVerge</a></div>
+                  <div class="nav"><a href="http://localhost:9223/json" target="_blank">多浏览器端口</a></div>
+                  <div class="nav"><a href="https://web.telegram.org/a/#-1004452086151" target="_blank">TG-Gmail_OTP</a></div>
+                  <div class="nav"><a href="https://app.bugbug.io/organizations/1e7d28ce-3d70-4bae-9aad-e531940f7382/projects/my-project-2d63bff8-e865-44a5-8c3e-fce0721cf478/tests/7baf48d3-6518-4f63-821f-f46a33151c72/?view=folder" target="_blank">app.bugbug.io</a></div>
+                  <div class="nav"><a href="https://www.logosc.cn/design/mockup" target="_blank">logosc</a></div>
+                  <div class="nav"><a href="https://www.design.com/" target="_blank">logodesign</a></div>
+                  <div class="nav"><a href="https://vercel.com/" target="_blank">vercel</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 站长工具 -->
+            <div class="col-bookmark">
+              <div class="box" id="203">
+                <div class="title"><span class="text">站长工具</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://dash.cloudflare.com/" target="_blank">Cloudflare</a></div>
+                  <div class="nav"><a href="https://vercel.app" target="_blank">Vercel</a></div>
+                  <div class="nav"><a href="https://github.com" target="_blank">github</a></div>
+                  <div class="nav"><a href="https://virtualbrowser.cc/zh/" target="_blank">VirtualBrowser</a></div>
+                  <div class="nav"><a href="https://github.com/clash-verge-rev/clash-verge-rev/releases" target="_blank">ClashVerge</a></div>
+                  <div class="nav"><a href="http://localhost:9223/json" target="_blank">多浏览器端口</a></div>
+                  <div class="nav"><a href="https://web.telegram.org/a/#-1004452086151" target="_blank">TG-Gmail_OTP</a></div>
+                  <div class="nav"><a href="https://app.bugbug.io/organizations/1e7d28ce-3d70-4bae-9aad-e531940f7382/projects/my-project-2d63bff8-e865-44a5-8c3e-fce0721cf478/tests/7baf48d3-6518-4f63-821f-f46a33151c72/?view=folder" target="_blank">app.bugbug.io</a></div>
+                  <div class="nav"><a href="https://www.logosc.cn/design/mockup" target="_blank">logosc</a></div>
+                  <div class="nav"><a href="https://www.design.com/" target="_blank">logodesign</a></div>
+                  <div class="nav"><a href="https://vercel.com/" target="_blank">vercel</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 插件 -->
+            <div class="col-bookmark">
+              <div class="box" id="207">
+                <div class="title"><span class="text">插件</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://chromewebstore.google.com/detail/auto-refresh-plus-page-mo/hgeljhfekpckiiplhkigfehkdpldcggm?utm_source=ext_sidebar" target="_blank">Auto Refresh Plus | Page Monitor</a></div>
+                  <div class="nav"><a href="https://chromewebstore.google.com/detail/%E7%AF%A1%E6%94%B9%E7%8C%B4/dhdgffkkebhmkfjojejmpbldmpobfkfo?utm_source=ext_sidebar" target="_blank">油猴脚本</a></div>
+                  <div class="nav"><a href="https://chromewebstore.google.com/detail/browser-agent-recorder/mdnbdbfgjhijfheocaogbkfiackpioki" target="_blank">Browser Agent Recorder</a></div>
+                  <div class="nav"><a href="https://chromewebstore.google.com/detail/minimal-tab-and-window-wr/fhnjbcecfekhebnlgogldfolnkgdoicd?hl=zh-CN&amp;utm_source=ext_sidebar" target="_blank">浏览器标签页Window Wrangler</a></div>
+                  <div class="nav"><a href="https://chrome.google.com/webstore/detail/authenticator/bhghoamapcdpbohphigoooaddinpkbai" target="_blank">Authenticator</a></div>
+                  <div class="nav"><a href="https://github.com/hamad501/pagewalk" target="_blank">pagewalk</a></div>
+                  <div class="nav"><a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" target="_blank">get-cookiestxt-locally</a></div>
+                  <div class="nav"><a href="https://chromewebstore.google.com/detail/singlefile/mpiodijhokgodhhofbcjdecpffjipkle?hl=zh-CN&amp;utm_source=ext_sidebar" target="_blank">SingleFIle</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 知识库 -->
+            <div class="col-bookmark">
+              <div class="box" id="209">
+                <div class="title"><span class="text">知识库</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://asg1q05m0gg3.sg.larksuite.com/wiki/ORBPwQE0QiwGwsk4z9ylESQkgNe#mindmap" target="_blank">国家知识库</a></div>
+                  <div class="nav"><a href="https://taqarmc25.sg.larksuite.com/wiki/AsZZwoBuKis4uwkhwAllStACgsW#mindmap" target="_blank">支付中心lark钱包使用规范新版</a></div>
+                  <div class="nav"><a href="https://asg1q05m0gg3.sg.larksuite.com/wiki/KyFQw960LiIwBMkfWVKlY0HTg5f" target="_blank">转账自动化-环境配置</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 同业 & 竞品 -->
+            <div class="col-bookmark">
+              <div class="box" id="212">
+                <div class="title"><span class="text">同业&amp;竞品</span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://www.paylinkgroup.com/" target="_blank">Paylink</a></div>
+                  <div class="nav"><a href="https://tpay.trade/" target="_blank">Tpay</a></div>
+                  <div class="nav"><a href="https://www.karo-pay.com/" target="_blank">Karo</a></div>
+                  <div class="nav"><a href="https://www.legendpayer.com/" target="_blank">Legend</a></div>
+                  <div class="nav"><a href="https://www.valuepayng.com/" target="_blank">Valuepay</a></div>
+                  <div class="nav"><a href="https://safepay.pk/" target="_blank">Safepay</a></div>
+                  <div class="nav"><a href="https://www.nayapay.com/" target="_blank">Nayapay</a></div>
+                  <div class="nav"><a href="https://telr.com/" target="_blank">Telr-中东PSP</a></div>
+                  <div class="nav"><a href="https://paytabs.com/en/" target="_blank">Paytabs-沙特PSP</a></div>
+                  <div class="nav"><a href="https://www.payermax.com/zh-cn" target="_blank">Payermax-跨境聚合</a></div>
+                  <div class="nav"><a href="https://www.ipaylinks.com/" target="_blank">ipay</a></div>
+                  <div class="nav"><a href="https://www.fawry.com/" target="_blank">fawry</a></div>
+                  <div class="nav"><a href="paymob.com/" target="_blank">paymob-埃及</a></div>
+                  <div class="nav"><a href="https://razorpay.com/" target="_blank">razorpay-印度</a></div>
+                  <div class="nav"><a href="https://midtrans.com/" target="_blank">midtrans-印尼</a></div>
+                  <div class="nav"><a href="https://www.ksher.cn/home/" target="_blank">kser</a></div>
+                  <div class="nav"><a href="https://www.payssion.com/en/" target="_blank">payssion</a></div>
+                  <div class="nav"><a href="https://www.antom.com/cn" target="_blank">蚂蚁国际</a></div>
+                  <div class="nav"><a href="https://skypay.com.cn/" target="_blank">skypay-菲律宾</a></div>
+                  <div class="nav"><a href="https://wise.com/" target="_blank">wise</a></div>
+                  <div class="nav"><a href="https://www.revolut.com/" target="_blank">revolut-欧盟 EMI</a></div>
+                  <div class="nav"><a href="https://www.paysera.com/v2/en-GB/index" target="_blank">paysera-立陶宛 EMI</a></div>
+                  <div class="nav"><a href="https://www.panpay.com/" target="_blank">PanPay 泛付</a></div>
+                  <div class="nav"><a href="https://www.xtransfer.com/" target="_blank">XTransfer</a></div>
+                  <div class="nav"><a href="j-pay.net/" target="_blank">Jpay</a></div>
+                  <div class="nav"><a href="https://pyvio.com/zh" target="_blank">Pyvio 湃沃</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- Design -->
+            <div class="col-bookmark">
+              <div class="box" id="209">
+                <div class="title"><span class="text">Design </span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://www.koukoutu.com/" target="_blank">在线抠图</a></div>
+                  <div class="nav"><a href="https://tool.jisuapi.com/pic2base64.html/" target="_blank">图片转BASE64</a></div>
+                  <div class="nav"><a href="https://3dlogolab.io/3d-logo-generator-free" target="_blank">3Dlogo</a></div>
+                  <div class="nav"><a href="https://logo.superopc.app/" target="_blank">Logosuperopc</a></div>
+                  <div class="nav"><a href="https://www.figma.com/" target="_blank">figma</a></div>
+                </div>
+              </div>
+            </div>
+             <!-- API文档-其他 -->
+            <div class="col-bookmark">
+              <div class="box" id="209">
+                <div class="title"><span class="text">API文档-其他 </span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://apidoc.kilipayment.com/web/#/652399990/108776298" target="_blank">Kilipay-API文档</a></div>
+                </div>
+              </div>
+            </div>
+            <!-- 测试版网站 -->
+            <div class="col-bookmark">
+              <div class="box" id="209">
+                <div class="title"><span class="text">测试版网站（Beta） </span></div>
+                <div class="introduction"></div>
+                <div class="navigation">
+                  <div class="nav"><a href="https://paylinkus.vercel.app/" target="_blank">PaylinkUS-第一版</a></div>
+                  <div class="nav"><a href="https://paylinkus-website.vercel.app/" target="_blank">PaylinkUS-第二版</a></div>
+                  <div class="nav"><a href="https://onepay-beta-omega.vercel.app/" target="_blank">OnePay-第四版</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ==================== 页脚 ==================== -->
+        <div class="footer">
+          <p class="copyright">© 2026</p>
+          <a href="http://beian.miit.gov.cn/" target="_blank" class="icp">本地版</a>
+        </div>
+        <!-- ==================== 右侧悬浮栏 ==================== -->
+        <div class="right-bar">
+          <div class="weather" title="天气"><i>☁️</i></div>
+          <div class="music pause" title="音乐"><i>🎵</i></div>
+          <div class="nav-btn" title="热门"><i>🔥</i></div>
+          <div class="leave-msg" title="留言"><i>📝</i></div>
+          <div class="add" title="添加"><i>➕</i></div>
+          <div class="sort" title="排序"><i>↕️</i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ==================== 星光背景脚本 ==================== -->
+  <script>
+    (function () {
+      var canvas = document.getElementById('starfield');
+      if (!canvas || !canvas.getContext) return;
+      var ctx = canvas.getContext('2d');
+      var stars = [];
+      var W = 0, H = 0, DPR = 1;
+      var sprite = null;
+      var SPRITE_SIZE = 64;   // 预渲染的光点贴图尺寸（越大越柔和）
+      var t = 0;
+      /* ---------- 预渲染一个柔和的光点贴图（径向渐变） ---------- */
+      function makeSprite() {
+        var s = document.createElement('canvas');
+        s.width = SPRITE_SIZE;
+        s.height = SPRITE_SIZE;
+        var g = s.getContext('2d');
+        var cx = SPRITE_SIZE / 2;
+        var grad = g.createRadialGradient(cx, cx, 0, cx, cx, cx);
+        grad.addColorStop(0.00, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.15, 'rgba(255,255,255,0.85)');
+        grad.addColorStop(0.35, 'rgba(255,255,255,0.35)');
+        grad.addColorStop(1.00, 'rgba(255,255,255,0)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+        return s;
+      }
+      /* ---------- 根据屏幕尺寸生成星星 ---------- */
+      function initStars() {
+        stars = [];
+        // 屏幕越大星星越多，做上限封顶保证性能
+        var count = Math.round((W * H) / 5500);
+        if (count < 60)  count = 60;
+        if (count > 260) count = 260;
+        for (var i = 0; i < count; i++) {
+          var big = Math.random() < 0.12;   // 少量“大星星”会带光晕
+          stars.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            // 半径 0.4 ~ 1.6，大星星再乘 1.4
+            r: (0.4 + Math.random() * 1.2) * (big ? 1.6 : 1),
+            phase: Math.random() * Math.PI * 2,       // 闪烁相位
+            speed: 0.4 + Math.random() * 1.4,         // 闪烁速度
+            base: 0.25 + Math.random() * 0.35,        // 基础亮度
+            big: big
+          });
+        }
+      }
+      /* ---------- 尺寸变化 ---------- */
+      function resize() {
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width  = Math.round(W * DPR);
+        canvas.height = Math.round(H * DPR);
+        canvas.style.width  = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        initStars();
+      }
+      /* ---------- 每帧绘制 ---------- */
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        t += 0.016;
+        for (var i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          // 亮度随时间正弦变化（闪烁）
+          var wave = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+          var alpha = s.base + (1 - s.base) * wave;
+          // 让亮暗对比更明显一点
+          alpha = alpha * alpha;
+          // 用预渲染光点贴图绘制，带光晕很柔和
+          var size = s.r * 8;   // 贴图可视尺寸
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(
+            sprite,
+            s.x - size / 2,
+            s.y - size / 2,
+            size,
+            size
+          );
+          // 大星星额外叠加一个小核心，更像“星光”
+          if (s.big) {
+            ctx.globalAlpha = alpha * 0.9;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r * 0.55, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+      }
+      /* ---------- 启动 ---------- */
+      sprite = makeSprite();
+      window.addEventListener('resize', resize, false);
+      resize();
+      draw();
+    })();
+  </script>
+  <!-- ==================== 搜索引擎切换脚本，新增链上查询engine配置 ==================== -->
+  <script>
+    (function () {
+      var ENGINES = {
+        google: {
+          placeholder: '谷歌一下',
+          getUrl: function (q) {
+            return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+          }
+        },
+        sogou: {
+          placeholder: '输入文字，搜狗翻译一下',
+          getUrl: function (q) {
+            return 'https://fanyi.sogou.com/text?keyword=' + encodeURIComponent(q);
+          }
+        },
+        gtranslate: {
+          placeholder: '输入文字，谷歌翻译一下',
+          getUrl: function (q) {
+            return 'https://translate.google.com/?sl=auto&tl=zh-CN&text='
+                 + encodeURIComponent(q) + '&op=translate';
+          }
+        },
+        // ====新增链上查询配置====
+        chain: {
+          placeholder: '输入TRON钱包地址进行链上查询',
+          getUrl: function (q) {
+            // 替换kw为输入的钱包地址
+            return 'https://www.oklink.com/zh-hans/tron/address/' + q + '/token-transfer';
+          }
+        }
+      };
+      var currentEngine = 'google';
+      var sitesWrap = document.getElementById('searchSites');
+      var input     = document.getElementById('searchInput');
+      var btn       = document.getElementById('searchBtn');
+      function doSearch() {
+        var q = input.value.trim();
+        if (!q) { input.focus(); return; }
+        var engine = ENGINES[currentEngine] || ENGINES.google;
+        window.open(engine.getUrl(q), '_blank');
+      }
+      function switchEngine(name) {
+        if (!ENGINES[name]) return;
+        currentEngine = name;
+        var items = sitesWrap.querySelectorAll('.list');
+        for (var i = 0; i < items.length; i++) {
+          items[i].classList.toggle('active', items[i].dataset.engine === name);
+        }
+        input.value = '';
+        input.placeholder = ENGINES[name].placeholder;
+        input.focus();
+      }
+      sitesWrap.addEventListener('click', function (e) {
+        var target = e.target.closest('.list');
+        if (target) switchEngine(target.dataset.engine);
+      });
+      btn.addEventListener('click', doSearch);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
+      });
+      input.placeholder = ENGINES[currentEngine].placeholder;
+    })();
+  </script>
+</body>
+</html>
+<!-- （注：内容由AI生成） -->
